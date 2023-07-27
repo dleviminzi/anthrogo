@@ -46,10 +46,9 @@ func main() {
 }
 ```
 ## Streaming completion usage
-[Screencast from 07-27-2023 02:34:43 PM.webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/d61e938f-fb7c-43a6-b919-c662d7929e0b)
+[streaming-completion-example.webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/732bdaff-f22d-4208-b9af-57a8666e1cd4)
 <details>
 <summary>Code</summary>	
-
 ```go
 func main() {
 	// Create a new client
