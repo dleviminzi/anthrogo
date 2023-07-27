@@ -46,7 +46,7 @@ func main() {
 }
 ```
 ## Streaming completion usage
-[streaming-completion-example.webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/732bdaff-f22d-4208-b9af-57a8666e1cd4)
+[streaming-completion-example (trimmed).webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/14f80831-a53b-47bd-a8e3-67fe4c279df6)
 <details>
 <summary>Code</summary>	
 	
