@@ -1,4 +1,6 @@
 # go-anthropic (anthrogo)
+[![Go Reference](https://pkg.go.dev/badge/github.com/dleviminzi/go-anthropic.svg)](https://pkg.go.dev/github.com/dleviminzi/go-anthropic)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dleviminzi/go-anthropic)](https://goreportcard.com/report/github.com/dleviminzi/go-anthropic)
 
 This is a simple client for using Anthropic's api to get claude completions. It is not an official client. Contributions are welcome!
 
