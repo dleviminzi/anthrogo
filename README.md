@@ -49,6 +49,7 @@ func main() {
 [streaming-completion-example.webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/732bdaff-f22d-4208-b9af-57a8666e1cd4)
 <details>
 <summary>Code</summary>	
+	
 ```go
 func main() {
 	// Create a new client
