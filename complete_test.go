@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dleviminzi/go-anthropic/mocks"
+	"github.com/dleviminzi/anthrogo/mocks"
 )
 
 func TestComplete(t *testing.T) {

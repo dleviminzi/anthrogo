@@ -1,8 +1,6 @@
-module github.com/dleviminzi/go-anthropic
+module github.com/dleviminzi/anthrogo
 
-go 1.20
-
-require github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
+go 1.21
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -11,8 +9,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require (
-	github.com/stretchr/testify v1.8.4
-	golang.org/x/net v0.0.0-20191116160921-f9c825593386 // indirect
-	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
-)
+require github.com/stretchr/testify v1.8.4

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -89,7 +88,7 @@ func (c *Client) Complete(payload *CompletePayload) (*CompleteResponse, error) {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +130,7 @@ func (c *Client) CompleteStream(payload *CompletePayload) (*CompleteStreamRespon
 	}
 
 	if res.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, err
 		}

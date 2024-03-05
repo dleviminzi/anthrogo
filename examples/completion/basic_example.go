@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	anthrogo "github.com/dleviminzi/go-anthropic"
+	"github.com/dleviminzi/anthrogo"
 )
 
 func main() {
