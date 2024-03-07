@@ -7,7 +7,7 @@ This is a simple client for using Anthropic's api to get claude completions. It 
 
 ## Installation
 ```
-go get github.com/dleviminzi/go-anthropic
+go get github.com/dleviminzi/anthrogo
 ```
 
 ## Basic usage
