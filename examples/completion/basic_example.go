@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -28,7 +29,7 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleHuman, userPrompt)
 
 	// Set up the payload and send completion stream request
-	resp, err := c.Complete(&anthrogo.CompletePayload{
+	resp, err := c.Complete(context.Background(), anthrogo.CompletePayload{
 		MaxTokensToSample: 256,
 		Model:             anthrogo.ModelClaude2,
 		Prompt:            conversation.GeneratePrompt(),
@@ -42,5 +43,4 @@ func main() {
 
 	// Add claude's response to conversation for further prompting...
 	conversation.AddMessage(anthrogo.RoleAssistant, resp.Completion)
-
 }

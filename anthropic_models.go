@@ -5,8 +5,8 @@ package anthrogo
 type AnthropicModel string
 
 const (
-	Claude3Opus   AnthropicModel = "claude-3-opus-20240229"
-	Claude3Sonnet AnthropicModel = "claude-3-sonnet-20240229"
+	ModelClaude3Opus   AnthropicModel = "claude-3-opus-20240229"
+	ModelClaude3Sonnet AnthropicModel = "claude-3-sonnet-20240229"
 
 	ModelClaude2     AnthropicModel = "claude-2"
 	ModelClaude2Dot1 AnthropicModel = "claude-2.1"

@@ -13,11 +13,24 @@ import (
 )
 
 const (
-	DefaultMaxRetries = 3
-	DefaultTimeout    = time.Minute
-	DefaultVersion    = "2023-06-01"
-	jitterFactor      = 0.5
+	DefaultMaxRetries   = 3
+	DefaultTimeout      = time.Minute
+	DefaultVersion      = "2023-06-01"
+	jitterFactor        = 0.5
+	RequestTypeComplete = "complete"
+	RequestTypeMessages = "messages"
 )
+
+// ErrorResponse holds the error details in the response.
+type ErrorResponse struct {
+	Error ErrorDetail `json:"error"`
+}
+
+// ErrorDetail describes the error type and message.
+type ErrorDetail struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
 
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -112,20 +125,20 @@ func (c *Client) setRequestHeaders(req *http.Request) {
 }
 
 // createRequest creates and returns a new HTTP request with necessary headers.
-func (c *Client) createRequest(payload *CompletePayload) (*http.Request, context.CancelFunc, error) {
+func (c *Client) createRequest(ctx context.Context, payload any, requestType string) (*http.Request, context.CancelFunc, error) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.BaseURL+"complete", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", c.BaseURL+requestType, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	c.setRequestHeaders(req)
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 	req = req.WithContext(ctx)
 
 	return req, cancel, nil

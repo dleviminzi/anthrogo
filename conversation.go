@@ -6,7 +6,7 @@ import (
 
 // Conversation is a structure holding all messages of the conversation.
 type Conversation struct {
-	Messages []Message
+	Messages []CompletionMessage
 }
 
 // NewConversation creates and returns a new Conversation.
@@ -16,7 +16,7 @@ func NewConversation() *Conversation {
 
 // AddMessage appends a new message to the conversation. Role indicates if the message is from the "Assistant" or the "User".
 func (c *Conversation) AddMessage(role Role, content string) {
-	c.Messages = append(c.Messages, Message{Role: role, Content: content})
+	c.Messages = append(c.Messages, CompletionMessage{Role: role, Content: content})
 }
 
 // GeneratePrompt formats the conversation into a string which can be used as a prompt for the assistant.

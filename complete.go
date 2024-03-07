@@ -8,6 +8,20 @@ import (
 	"net/http"
 )
 
+// Role represents the role of a participant in a conversation. It could either be a "Human" or an "Assistant".
+type Role string
+
+const (
+	RoleHuman     Role = "Human"
+	RoleAssistant Role = "Assistant"
+)
+
+// CompletionMessage represents a single message in a conversation. It includes the Role of the sender and the Content of the message.
+type CompletionMessage struct {
+	Role    Role
+	Content string
+}
+
 // CompletePayload contains the necessary data for the completion request.
 type CompletePayload struct {
 	MaxTokensToSample int            `json:"max_tokens_to_sample"`
@@ -24,17 +38,6 @@ type CompleteOptions struct {
 	Temperature   float64  `json:"temperature,omitempty"`
 	TopK          int      `json:"top_k,omitempty"`
 	TopP          float64  `json:"top_p,omitempty"`
-}
-
-// ErrorResponse holds the error details in the response.
-type ErrorResponse struct {
-	Error ErrorDetail `json:"error"`
-}
-
-// ErrorDetail describes the error type and message.
-type ErrorDetail struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
 }
 
 // CompleteResponse contains the completion result or error details.
@@ -72,54 +75,54 @@ func (c CompleteStreamResponse) Close() error {
 }
 
 // Complete sends a complete request to the server and returns the response or error.
-func (c *Client) Complete(payload *CompletePayload) (*CompleteResponse, error) {
+func (c *Client) Complete(ctx context.Context, payload CompletePayload) (CompleteResponse, error) {
 	// force stream off if user uses this method
 	payload.Stream = false
 
-	req, cancel, err := c.createRequest(payload)
+	var resp CompleteResponse
+	req, cancel, err := c.createRequest(ctx, payload, RequestTypeComplete)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 	defer cancel()
 
 	res, err := c.doRequestWithRetries(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	var response CompleteResponse
 	if res.StatusCode != http.StatusOK {
 		var errorResponse ErrorResponse
 		err = json.Unmarshal(body, &errorResponse)
 		if err != nil {
-			return nil, err
+			return resp, err
 		}
-		return nil, fmt.Errorf("%s: %s", errorResponse.Error.Type, errorResponse.Error.Message)
+		return resp, fmt.Errorf("%s: %s", errorResponse.Error.Type, errorResponse.Error.Message)
 	}
 
-	err = json.Unmarshal(body, &response)
+	err = json.Unmarshal(body, &resp)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	return &response, nil
+	return resp, nil
 }
 
 // CompleteStream is a method for Client that sends a request to the server with
 // streaming enabled. It marshals the payload into a JSON object and sends it
 // to the server in a POST request. If the request is successful, it returns a
 // pointer to a CompleteStreamResponse object. Otherwise, it returns an error.
-func (c *Client) CompleteStream(payload *CompletePayload) (*CompleteStreamResponse, error) {
+func (c *Client) CompleteStream(ctx context.Context, payload CompletePayload) (*CompleteStreamResponse, error) {
 	// force stream to true if user calls this method
 	payload.Stream = true
 
-	req, cancel, err := c.createRequest(payload)
+	req, cancel, err := c.createRequest(ctx, payload, RequestTypeComplete)
 	if err != nil {
 		return nil, err
 	}
