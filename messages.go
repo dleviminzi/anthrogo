@@ -18,7 +18,7 @@ const (
 	RoleTypeAssistant RoleType    = "assistant"
 )
 
-type MessageRequest struct {
+type MessagePayload struct {
 	Model         AnthropicModel `json:"model"`
 	Messages      []Message      `json:"messages"`
 	MaxTokens     int            `json:"max_tokens"`
@@ -73,8 +73,7 @@ type Usage struct {
 	OutputTokens int `json:"output_tokens"`
 }
 
-func (c *Client) Message(ctx context.Context, payload MessageRequest) (MessageResponse, error) {
-
+func (c *Client) MessageRequest(ctx context.Context, payload MessagePayload) (MessageResponse, error) {
 	var resp MessageResponse
 
 	req, cancel, err := c.createRequest(ctx, payload, RequestTypeMessages)

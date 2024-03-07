@@ -26,7 +26,7 @@ func main() {
 	userPrompt, _ := reader.ReadString('\n')
 	userPrompt = strings.TrimSuffix(userPrompt, "\n")
 
-	resp, err := c.Message(context.Background(), anthrogo.MessageRequest{
+	resp, err := c.MessageRequest(context.Background(), anthrogo.MessagePayload{
 		Model: anthrogo.ModelClaude3Opus,
 		Messages: []anthrogo.Message{{
 			Role: anthrogo.RoleTypeUser,

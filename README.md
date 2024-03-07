@@ -29,7 +29,7 @@ func main() {
 	userPrompt, _ := reader.ReadString('\n')
 	userPrompt = strings.TrimSuffix(userPrompt, "\n")
 
-	resp, err := c.Message(context.Background(), anthrogo.MessageRequest{
+	resp, err := c.MessageRequest(context.Background(), anthrogo.MessagePayload{
 		Model: anthrogo.ModelClaude3Opus,
 		Messages: []anthrogo.Message{{
 			Role: anthrogo.RoleTypeUser,
@@ -70,7 +70,7 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleHuman, userPrompt)
 
 	// Set up the payload and send completion stream request
-	resp, err := c.Complete(&anthrogo.CompletePayload{
+	resp, err := c.CompletionRequest(context.Background(), anthrogo.CompletionPayload{
 		MaxTokensToSample: 256,
 		Model:             anthrogo.ModelClaude2,
 		Prompt:            conversation.GeneratePrompt(),
@@ -114,7 +114,7 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleHuman, userPrompt)
 
 	// Set up the payload and send completion stream request
-	completeStreamResp, err := c.CompleteStream(&anthrogo.CompletePayload{
+	completeStreamResp, _ := c.StreamingCompletionRequest(context.Background(), anthrogo.CompletionPayload{
 		MaxTokensToSample: 256,
 		Model:             anthrogo.ModelClaude2,
 		Prompt:            conversation.GeneratePrompt(),

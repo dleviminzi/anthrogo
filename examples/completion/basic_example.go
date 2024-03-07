@@ -29,7 +29,7 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleHuman, userPrompt)
 
 	// Set up the payload and send completion stream request
-	resp, err := c.Complete(context.Background(), anthrogo.CompletePayload{
+	resp, err := c.CompletionRequest(context.Background(), anthrogo.CompletionPayload{
 		MaxTokensToSample: 256,
 		Model:             anthrogo.ModelClaude2,
 		Prompt:            conversation.GeneratePrompt(),

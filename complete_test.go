@@ -19,7 +19,7 @@ import (
 
 func TestComplete(t *testing.T) {
 	ctx := context.Background()
-	mockRes := &CompleteResponse{
+	mockRes := &CompletionResponse{
 		Completion: "test",
 		StopReason: "test",
 		Model:      "test",
@@ -38,13 +38,13 @@ func TestComplete(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{
+	payload := CompletionPayload{
 		MaxTokensToSample: 10,
 		Model:             "test",
 		Prompt:            "test",
 	}
 
-	response, err := client.Complete(ctx, payload)
+	response, err := client.CompletionRequest(ctx, payload)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
@@ -66,9 +66,9 @@ func TestComplete_HttpClientError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{}
+	payload := CompletionPayload{}
 
-	response, err := client.Complete(ctx, payload)
+	response, err := client.CompletionRequest(ctx, payload)
 
 	assert.Empty(t, response)
 	assert.Error(t, err)
@@ -89,9 +89,9 @@ func TestComplete_Non200StatusCode(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{}
+	payload := CompletionPayload{}
 
-	_, err = client.Complete(ctx, payload)
+	_, err = client.CompletionRequest(ctx, payload)
 
 	assert.NotNil(t, err)
 
@@ -111,9 +111,9 @@ func TestComplete_UnmarshalError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{}
+	payload := CompletionPayload{}
 
-	response, err := client.Complete(ctx, payload)
+	response, err := client.CompletionRequest(ctx, payload)
 
 	assert.Empty(t, response)
 	assert.Error(t, err)
@@ -137,9 +137,9 @@ func TestCompleteStream(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{}
+	payload := CompletionPayload{}
 
-	response, err := client.CompleteStream(ctx, payload)
+	response, err := client.StreamingCompletionRequest(ctx, payload)
 	defer response.Close()
 
 	assert.NoError(t, err)
@@ -161,9 +161,9 @@ func TestCompleteStream_HttpClientError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := CompletePayload{}
+	payload := CompletionPayload{}
 
-	response, err := client.CompleteStream(context.Background(), payload)
+	response, err := client.StreamingCompletionRequest(context.Background(), payload)
 
 	assert.Nil(t, response)
 	assert.Error(t, err)
