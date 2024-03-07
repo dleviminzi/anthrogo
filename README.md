@@ -1,7 +1,7 @@
 # anthropic go (anthrogo)
-[![Go Reference](https://pkg.go.dev/badge/github.com/dleviminzi/go-anthropic.svg)](https://pkg.go.dev/github.com/dleviminzi/go-anthropic)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dleviminzi/go-anthropic)](https://goreportcard.com/report/github.com/dleviminzi/go-anthropic)
-[![codecov](https://codecov.io/gh/dleviminzi/go-anthropic/branch/main/graph/badge.svg?token=OP2W7ENYN5)](https://codecov.io/gh/dleviminzi/go-anthropic)
+[![Go Reference](https://pkg.go.dev/badge/github.com/dleviminzi/anthrogo.svg)](https://pkg.go.dev/github.com/dleviminzi/anthrogo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dleviminzi/anthrogo)](https://goreportcard.com/report/github.com/dleviminzi/anthrogo)
+[![codecov](https://codecov.io/gh/dleviminzi/anthrogo/branch/main/graph/badge.svg?token=OP2W7ENYN5)](https://codecov.io/gh/dleviminzi/anthrogo)
 
 This is a simple client for using Anthropic's api to get claude completions. It is not an official client. Contributions are welcome!
 
