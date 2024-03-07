@@ -10,7 +10,47 @@ This is a simple client for using Anthropic's api to get claude completions. It 
 go get github.com/dleviminzi/anthrogo
 ```
 
-## Basic usage
+## Basic usage 
+
+### Message API
+```go
+func main() {
+	c, err := anthrogo.NewClient()
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	systemPrompt := "you are an expert in all things bananas"
+
+	// Read user input for the prompt
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter your prompt: ")
+	userPrompt, _ := reader.ReadString('\n')
+	userPrompt = strings.TrimSuffix(userPrompt, "\n")
+
+	resp, err := c.Message(context.Background(), anthrogo.MessageRequest{
+		Model: anthrogo.ModelClaude3Opus,
+		Messages: []anthrogo.Message{{
+			Role: anthrogo.RoleTypeUser,
+			Content: []anthrogo.MessageContent{{
+				Type: anthrogo.ContentTypeText,
+				Text: &userPrompt,
+			}},
+		}},
+		System:    &systemPrompt,
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	fmt.Println(resp.Content[0].Text)
+}
+```
+
+### Completion API
 ```go
 func main() {
 	c, err := anthrogo.NewClient()
@@ -46,7 +86,9 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleAssistant, resp.Completion)
 }
 ```
-## Streaming completion usage
+## Message Streaming (coming soon)
+
+## Completion Streaming
 [streaming-completion-example (trimmed).webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/14f80831-a53b-47bd-a8e3-67fe4c279df6)
 <details>
 <summary>Code</summary>	
@@ -108,30 +150,3 @@ func main() {
 ```
 </details>
 
-
-## Project structure
-```
-├── anthropic_models.go         <- available anthropic models 
-├── client.go                   <- client definition, options, and request formatting
-├── complete.go                 <- basic and stream completion requests/responses
-├── complete_test.go
-├── conversation.go             <- build conversations with chains of prompts  
-├── conversation_test.go
-├── message.go                  <- messages are the building blocks of conversations
-├── sse_decoder.go              <- server sent event decoder for streaming completions
-├── sse_decoder_test.go
-├── go.mod
-├── go.sum
-├── README.md
-├── LICENSE
-├── examples
-│   ├── completion
-│   │   └── basic_example.go
-│   └── stream
-│       └── stream_example.go
-└── mocks
-    └── mocks.go
-```
-
-## To-do
-- [ ] Tokenizer
