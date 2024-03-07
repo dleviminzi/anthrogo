@@ -2,9 +2,10 @@ package anthrogo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -17,13 +18,14 @@ import (
 )
 
 func TestComplete(t *testing.T) {
+	ctx := context.Background()
 	mockRes := &CompleteResponse{
 		Completion: "test",
 		StopReason: "test",
 		Model:      "test",
 	}
 	resBodyBytes, _ := json.Marshal(mockRes)
-	resBodyReader := ioutil.NopCloser(bytes.NewReader(resBodyBytes))
+	resBodyReader := io.NopCloser(bytes.NewReader(resBodyBytes))
 
 	mockHTTPClient := new(mocks.MockHttpClient)
 	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{
@@ -36,13 +38,13 @@ func TestComplete(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{
+	payload := CompletePayload{
 		MaxTokensToSample: 10,
 		Model:             "test",
 		Prompt:            "test",
 	}
 
-	response, err := client.Complete(payload)
+	response, err := client.Complete(ctx, payload)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
@@ -55,6 +57,7 @@ func TestComplete(t *testing.T) {
 }
 
 func TestComplete_HttpClientError(t *testing.T) {
+	ctx := context.Background()
 	mockHTTPClient := new(mocks.MockHttpClient)
 	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{}, errors.New("some http error"))
 
@@ -63,21 +66,22 @@ func TestComplete_HttpClientError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{}
+	payload := CompletePayload{}
 
-	response, err := client.Complete(payload)
+	response, err := client.Complete(ctx, payload)
 
-	assert.Nil(t, response)
+	assert.Empty(t, response)
 	assert.Error(t, err)
 
 	mockHTTPClient.AssertExpectations(t)
 }
 
 func TestComplete_Non200StatusCode(t *testing.T) {
+	ctx := context.Background()
 	mockHTTPClient := new(mocks.MockHttpClient)
 	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{
 		StatusCode: 400,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"error": {"type": "BadRequest", "message": "Bad request"}}`))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"type": "BadRequest", "message": "Bad request"}}`))),
 	}, nil)
 
 	client, err := NewClient(WithApiKey("blah"))
@@ -85,9 +89,9 @@ func TestComplete_Non200StatusCode(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{}
+	payload := CompletePayload{}
 
-	_, err = client.Complete(payload)
+	_, err = client.Complete(ctx, payload)
 
 	assert.NotNil(t, err)
 
@@ -95,10 +99,11 @@ func TestComplete_Non200StatusCode(t *testing.T) {
 }
 
 func TestComplete_UnmarshalError(t *testing.T) {
+	ctx := context.Background()
 	mockHTTPClient := new(mocks.MockHttpClient)
 	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"completion": "test", "invalid": {}`))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(`{"completion": "test", "invalid": {}`))),
 	}, nil)
 
 	client, err := NewClient(WithApiKey("blah"))
@@ -106,21 +111,22 @@ func TestComplete_UnmarshalError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{}
+	payload := CompletePayload{}
 
-	response, err := client.Complete(payload)
+	response, err := client.Complete(ctx, payload)
 
-	assert.Nil(t, response)
+	assert.Empty(t, response)
 	assert.Error(t, err)
 
 	mockHTTPClient.AssertExpectations(t)
 }
 
 func TestCompleteStream(t *testing.T) {
+	ctx := context.Background()
 	expectedBody := "data: {\"completion\":\"testCompletion\",\"stop_reason\":\"testReason\",\"model\":\"testModel\",\"stop\":\"testStop\",\"log_id\":\"testLogId\"}\n\r\n"
 	mockResponse := &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(strings.NewReader(expectedBody)),
+		Body:       io.NopCloser(strings.NewReader(expectedBody)),
 	}
 
 	mockHTTPClient := new(mocks.MockHttpClient)
@@ -131,9 +137,9 @@ func TestCompleteStream(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{}
+	payload := CompletePayload{}
 
-	response, err := client.CompleteStream(payload)
+	response, err := client.CompleteStream(ctx, payload)
 	defer response.Close()
 
 	assert.NoError(t, err)
@@ -155,9 +161,9 @@ func TestCompleteStream_HttpClientError(t *testing.T) {
 
 	client.HttpClient = mockHTTPClient
 
-	payload := &CompletePayload{}
+	payload := CompletePayload{}
 
-	response, err := client.CompleteStream(payload)
+	response, err := client.CompleteStream(context.Background(), payload)
 
 	assert.Nil(t, response)
 	assert.Error(t, err)
