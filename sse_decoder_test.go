@@ -12,7 +12,7 @@ func TestDecode(t *testing.T) {
 		name    string
 		input   string
 		wantErr bool
-		wantEv  *Event
+		wantEv  *CompletionEvent
 	}{
 		{
 			name:    "has : prefix",
@@ -42,26 +42,26 @@ func TestDecode(t *testing.T) {
 			name:    "id field",
 			input:   "id: testID\n\r",
 			wantErr: false,
-			wantEv:  &Event{ID: "testID"},
+			wantEv:  &CompletionEvent{ID: "testID"},
 		},
 		{
 			name:    "event field",
 			input:   "event: testEvent\n\r",
 			wantErr: false,
-			wantEv:  &Event{Event: "testEvent"},
+			wantEv:  &CompletionEvent{Event: "testEvent"},
 		},
 		{
 			name:    "retry field",
 			input:   "retry: 5\n\r",
 			wantErr: false,
-			wantEv:  &Event{Retry: 5},
+			wantEv:  &CompletionEvent{Retry: 5},
 		},
 		{
 			name:    "data field",
 			input:   "data: {\"completion\":\"testCompletion\",\"stop_reason\":\"testReason\",\"model\":\"testModel\",\"stop\":\"testStop\",\"log_id\":\"testLogId\"}\n\r",
 			wantErr: false,
-			wantEv: &Event{
-				Data: &ResponseData{
+			wantEv: &CompletionEvent{
+				Data: &CompletionEventData{
 					Completion: "testCompletion",
 					StopReason: "testReason",
 					Model:      "testModel",
@@ -92,7 +92,7 @@ func TestDecode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := strings.NewReader(tt.input + "\n")
-			dec := NewSSEDecoder(r)
+			dec := NewCompletionSSEDecoder(r)
 
 			ev, err := dec.Decode()
 			if !tt.wantErr {

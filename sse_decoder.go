@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ResponseData represents the data payload in a Server-Sent Events (SSE) message.
-type ResponseData struct {
+// CompletionEventData represents the data payload in a Server-Sent Events (SSE) message.
+type CompletionEventData struct {
 	Completion string `json:"completion"`
 	StopReason string `json:"stop_reason"`
 	Model      string `json:"model"`
@@ -18,30 +18,30 @@ type ResponseData struct {
 	LogID      string `json:"log_id"`
 }
 
-// Event represents a single Server-Sent Event. It includes the event type, data, ID, and retry fields.
-type Event struct {
+// CompletionEvent represents a single Server-Sent CompletionEvent. It includes the event type, data, ID, and retry fields.
+type CompletionEvent struct {
 	Event string
-	Data  *ResponseData
+	Data  *CompletionEventData
 	ID    string
 	Retry int
 }
 
-// SSEDecoder is a decoder for Server-Sent Events. It maintains a buffer reader and the current event being processed.
-type SSEDecoder struct {
-	currentEvent Event
+// CompletionSSEDecoder is a decoder for Server-Sent Events. It maintains a buffer reader and the current event being processed.
+type CompletionSSEDecoder struct {
+	currentEvent CompletionEvent
 	Reader       *bufio.Reader
 }
 
-// NewSSEDecoder initializes a new SSEDecoder with the provided reader.
-func NewSSEDecoder(r io.Reader) *SSEDecoder {
-	return &SSEDecoder{
+// NewCompletionSSEDecoder initializes a new SSEDecoder with the provided reader.
+func NewCompletionSSEDecoder(r io.Reader) *CompletionSSEDecoder {
+	return &CompletionSSEDecoder{
 		Reader: bufio.NewReader(r),
 	}
 }
 
 // Decode reads from the buffered reader line by line, parses Server-Sent Events and sets fields on the current event.
 // It returns the complete event when encountering an empty line, and nil otherwise. It will return EOF when nothing is left.
-func (d *SSEDecoder) Decode() (*Event, error) {
+func (d *CompletionSSEDecoder) Decode() (*CompletionEvent, error) {
 	line, err := d.Reader.ReadString('\n')
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (d *SSEDecoder) Decode() (*Event, error) {
 		}
 
 		ev := d.currentEvent
-		d.currentEvent = Event{ID: ev.ID} // preserve LastEventID for the next event
+		d.currentEvent = CompletionEvent{ID: ev.ID} // preserve LastEventID for the next event
 		return &ev, nil
 	}
 
@@ -79,7 +79,7 @@ func (d *SSEDecoder) Decode() (*Event, error) {
 	case "event":
 		d.currentEvent.Event = fieldValue
 	case "data":
-		var data ResponseData
+		var data CompletionEventData
 		err := json.Unmarshal([]byte(fieldValue), &data)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding data field: %w", err)

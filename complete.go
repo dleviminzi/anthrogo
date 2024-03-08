@@ -50,14 +50,14 @@ type CompletionResponse struct {
 // StreamingCompletionResponse contains the server sent events decoder, the response body from the request, and a
 // cancel function to enforce a timeout.
 type StreamingCompletionResponse struct {
-	decoder *SSEDecoder
+	decoder *CompletionSSEDecoder
 	body    io.ReadCloser
 	cancel  context.CancelFunc
 }
 
 // Decode is a method for CompleteStreamResponse that returns the next event
 // from the server-sent events decoder, or an error if one occurred.
-func (c StreamingCompletionResponse) Decode() (*Event, error) {
+func (c StreamingCompletionResponse) Decode() (*CompletionEvent, error) {
 	return c.decoder.Decode()
 }
 
@@ -146,5 +146,5 @@ func (c *Client) StreamingCompletionRequest(ctx context.Context, payload Complet
 		return nil, fmt.Errorf("%s: %s", errorResponse.Error.Type, errorResponse.Error.Message)
 	}
 
-	return &StreamingCompletionResponse{NewSSEDecoder(res.Body), res.Body, cancel}, nil
+	return &StreamingCompletionResponse{NewCompletionSSEDecoder(res.Body), res.Body, cancel}, nil
 }
