@@ -50,7 +50,64 @@ func main() {
 }
 ```
 
-### Completion API
+## Message Streaming
+[message-streaming-example](https://github.com/dleviminzi/anthrogo/assets/51272568/4d7dafa6-4088-4c57-951a-97d7a9898408)
+```go
+func main() {
+	c, err := anthrogo.NewClient()
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	
+	systemPrompt := "you are an expert in all things bananas"
+	
+	// Read user input for the prompt
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter your prompt: ")
+	userPrompt, _ := reader.ReadString('\n')
+	userPrompt = strings.TrimSuffix(userPrompt, "\n")
+	
+	r, _, err := c.MessageStreamRequest(context.Background(), anthrogo.MessagePayload{
+		Model: anthrogo.ModelClaude3Opus,
+		Messages: []anthrogo.Message{{
+			Role: anthrogo.RoleTypeUser,
+			Content: []anthrogo.MessageContent{{
+				Type: anthrogo.ContentTypeText,
+				Text: &userPrompt,
+			}},
+		}},
+		System:    &systemPrompt,
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	defer r.Close()
+	
+	// Create an SSEDecoder
+	decoder := anthrogo.NewMessageSSEDecoder(r)
+	for {
+		message, err := decoder.Decode(anthrogo.DecodeOptions{ContentOnly: true})
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Print(err)
+			continue
+		}
+	
+		if message.Event == "message_stop" {
+			break
+		}
+	
+		fmt.Print(message.Data.Content)
+	}
+}
+```
+
+### Completions (old api)
 ```go
 func main() {
 	c, err := anthrogo.NewClient()
@@ -86,7 +143,6 @@ func main() {
 	conversation.AddMessage(anthrogo.RoleAssistant, resp.Completion)
 }
 ```
-## Message Streaming (coming soon)
 
 ## Completion Streaming
 [streaming-completion-example (trimmed).webm](https://github.com/dleviminzi/go-anthropic/assets/51272568/14f80831-a53b-47bd-a8e3-67fe4c279df6)
@@ -149,4 +205,7 @@ func main() {
 }
 ```
 </details>
+</details>
+
+
 
