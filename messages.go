@@ -102,6 +102,8 @@ type Usage struct {
 // MessageRequest sends a message to the model and returns the response.
 func (c *Client) MessageRequest(ctx context.Context, payload MessagePayload) (MessageResponse, error) {
 	var resp MessageResponse
+	stream := false
+	payload.Stream = &stream
 
 	req, cancel, err := c.createRequest(ctx, payload, RequestTypeMessages)
 	if err != nil {
@@ -135,4 +137,38 @@ func (c *Client) MessageRequest(ctx context.Context, payload MessagePayload) (Me
 	}
 
 	return resp, nil
+}
+
+// MessageStreamRequest sends a message to the model and returns the body for the user to consume
+func (c *Client) MessageStreamRequest(ctx context.Context, payload MessagePayload) (io.ReadCloser, context.CancelFunc, error) {
+	stream := true
+	payload.Stream = &stream
+
+	req, cancel, err := c.createRequest(ctx, payload, RequestTypeMessages)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res, err := c.doRequestWithRetries(req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		var errorResponse ErrorResponse
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = json.Unmarshal(body, &errorResponse)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return nil, nil, fmt.Errorf("%s: %s", errorResponse.Error.Type, errorResponse.Error.Message)
+	}
+
+	return res.Body, cancel, nil
 }

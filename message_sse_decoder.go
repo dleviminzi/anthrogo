@@ -8,12 +8,22 @@ import (
 	"strings"
 )
 
-type MessageSSEPayload struct {
-	Event string      `json:"event"`
-	Data  interface{} `json:"data"`
+// MessageEventPayload is the decoded event from anthropic
+type MessageEventPayload struct {
+	Event string
+	Data  EventData
 }
 
-type MessageStartData struct {
+// EventData contains content which will be whatever the model output
+// and Data which is the full data from the event
+type EventData struct {
+	Content string
+	Data    any
+}
+
+// MessageStart is one of the data types for events and it represents the start of a
+// a stream of messages. It contains metadata about the request.
+type MessageStart struct {
 	Type    string `json:"type"`
 	Message struct {
 		ID           string   `json:"id"`
@@ -30,7 +40,8 @@ type MessageStartData struct {
 	} `json:"message"`
 }
 
-type ContentBlockStartData struct {
+// ContentBlockStart marks the start of a new content block in the message stream.
+type ContentBlockStart struct {
 	Type         string `json:"type"`
 	Index        int    `json:"index"`
 	ContentBlock struct {
@@ -39,27 +50,29 @@ type ContentBlockStartData struct {
 	} `json:"content_block"`
 }
 
+// PingData is a ping event
 type PingData struct {
 	Type string `json:"type"`
 }
 
-type ContentBlockDeltaData struct {
-	Type  string    `json:"type"`
-	Index int       `json:"index"`
-	Delta TextDelta `json:"delta"`
+// ContentBlockDelta carries new content for a content block in the message stream.
+type ContentBlockDelta struct {
+	Type  string `json:"type"`
+	Index int    `json:"index"`
+	Delta struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"delta"`
 }
 
-type TextDelta struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
-}
-
-type ContentBlockStopData struct {
+// ContentBlockStop marks the end of a content block in the message stream.
+type ContentBlockStop struct {
 	Type  string `json:"type"`
 	Index int    `json:"index"`
 }
 
-type MessageDeltaData struct {
+// MessageDelta events indicate top-level changes to the final message.
+type MessageDelta struct {
 	Type  string      `json:"type"`
 	Delta interface{} `json:"delta"`
 	Usage struct {
@@ -67,10 +80,12 @@ type MessageDeltaData struct {
 	} `json:"usage"`
 }
 
+// MessageStopData is the final event in a message stream.
 type MessageStopData struct {
 	Type string `json:"type"`
 }
 
+// ErrorData is the event type for errors.
 type ErrorData struct {
 	Type  string `json:"type"`
 	Error struct {
@@ -79,19 +94,41 @@ type ErrorData struct {
 	} `json:"error"`
 }
 
+// MessageEvent is the event type for messages. It contains the message payload
+// and an error if one occurred.
+type MessageEvent struct {
+	Message *MessageEventPayload
+	Err     *error
+}
+
+// MessageSSEDecoder is a decoder for the SSE stream from the message endpoint.
 type MessageSSEDecoder struct {
 	reader  *bufio.Reader
 	content []string
 }
 
-func NewSSEDecoder(reader io.Reader) *MessageSSEDecoder {
+// DecodeOptions are options for decoding the SSE stream.
+type DecodeOptions struct {
+	ContentOnly bool
+}
+
+// NewMessageSSEDecoder creates a new MessageSSEDecoder.
+func NewMessageSSEDecoder(reader io.Reader) *MessageSSEDecoder {
 	return &MessageSSEDecoder{
 		reader:  bufio.NewReader(reader),
 		content: make([]string, 0),
 	}
 }
 
-func (d *MessageSSEDecoder) Decode() (*MessageSSEPayload, error) {
+// Decode reads the next event from the SSE stream.
+func (d *MessageSSEDecoder) Decode(opts ...DecodeOptions) (*MessageEventPayload, error) {
+	var options DecodeOptions
+	if len(opts) > 1 {
+		return nil, fmt.Errorf("too many options provided, expected at most one")
+	} else if len(opts) == 1 {
+		options = opts[0]
+	}
+
 	line, err := d.reader.ReadString('\n')
 	if err != nil {
 		if err == io.EOF {
@@ -103,7 +140,7 @@ func (d *MessageSSEDecoder) Decode() (*MessageSSEPayload, error) {
 	line = strings.TrimSpace(line)
 	if line == "" {
 		// Recursively call Decode to read the next event
-		return d.Decode()
+		return d.Decode(opts...)
 	}
 
 	parts := strings.SplitN(line, ":", 2)
@@ -115,38 +152,24 @@ func (d *MessageSSEDecoder) Decode() (*MessageSSEPayload, error) {
 	value := strings.TrimSpace(parts[1])
 
 	if field == "event" {
-		data := d.decodeData(value)
-
-		// Update the content array based on the event type
-		switch value {
-		case "content_block_start":
-			contentBlockStartData := data.(ContentBlockStartData)
-			index := contentBlockStartData.Index
-			if index >= len(d.content) {
-				d.content = append(d.content, make([]string, index-len(d.content)+1)...)
-			}
-			d.content[index] = contentBlockStartData.ContentBlock.Text
-		case "content_block_delta":
-			contentBlockDeltaData := data.(ContentBlockDeltaData)
-			index := contentBlockDeltaData.Index
-			if index >= len(d.content) {
-				d.content = append(d.content, make([]string, index-len(d.content)+1)...)
-			}
-			d.content[index] += contentBlockDeltaData.Delta.Text
+		data, err := d.decodeData(value)
+		if err != nil {
+			return nil, err
 		}
 
-		return &MessageSSEPayload{
-			Event: value,
-			Data:  data,
-		}, nil
+		if data.Content != "" || !options.ContentOnly || value == "message_stop" {
+			return &MessageEventPayload{
+				Event: value,
+				Data:  data,
+			}, nil
+		}
 	}
 	// Recursively call Decode to read the next event if we didn't have one here
-	return d.Decode()
+	return d.Decode(opts...)
 }
 
-// TODO: check for errors and return them here.
-func (d *MessageSSEDecoder) decodeData(event string) any {
-	var data any
+func (d *MessageSSEDecoder) decodeData(event string) (EventData, error) {
+	var eventData EventData
 
 	for {
 		line, err := d.reader.ReadString('\n')
@@ -164,40 +187,75 @@ func (d *MessageSSEDecoder) decodeData(event string) any {
 
 			switch event {
 			case "message_start":
-				var messageStartData MessageStartData
-				json.Unmarshal([]byte(jsonData), &messageStartData)
-				data = messageStartData
+				var messageStartData MessageStart
+				err := json.Unmarshal([]byte(jsonData), &messageStartData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = messageStartData
 			case "content_block_start":
-				var contentBlockStartData ContentBlockStartData
-				json.Unmarshal([]byte(jsonData), &contentBlockStartData)
-				data = contentBlockStartData
+				var contentBlockStartData ContentBlockStart
+				err := json.Unmarshal([]byte(jsonData), &contentBlockStartData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = contentBlockStartData
+				eventData.Content = contentBlockStartData.ContentBlock.Text
+				d.updateContent(contentBlockStartData.Index, contentBlockStartData.ContentBlock.Text)
 			case "ping":
 				var pingData PingData
-				json.Unmarshal([]byte(jsonData), &pingData)
-				data = pingData
+				err := json.Unmarshal([]byte(jsonData), &pingData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = pingData
 			case "content_block_delta":
-				var contentBlockDeltaData ContentBlockDeltaData
-				json.Unmarshal([]byte(jsonData), &contentBlockDeltaData)
-				data = contentBlockDeltaData
+				var contentBlockDeltaData ContentBlockDelta
+				err := json.Unmarshal([]byte(jsonData), &contentBlockDeltaData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = contentBlockDeltaData
+				eventData.Content = contentBlockDeltaData.Delta.Text
+				d.updateContent(contentBlockDeltaData.Index, contentBlockDeltaData.Delta.Text)
 			case "content_block_stop":
-				var contentBlockStopData ContentBlockStopData
-				json.Unmarshal([]byte(jsonData), &contentBlockStopData)
-				data = contentBlockStopData
+				var contentBlockStopData ContentBlockStop
+				err := json.Unmarshal([]byte(jsonData), &contentBlockStopData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = contentBlockStopData
 			case "message_delta":
-				var messageDeltaData MessageDeltaData
-				json.Unmarshal([]byte(jsonData), &messageDeltaData)
-				data = messageDeltaData
+				var messageDeltaData MessageDelta
+				err := json.Unmarshal([]byte(jsonData), &messageDeltaData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = messageDeltaData
 			case "message_stop":
 				var messageStopData MessageStopData
-				json.Unmarshal([]byte(jsonData), &messageStopData)
-				data = messageStopData
+				err := json.Unmarshal([]byte(jsonData), &messageStopData)
+				if err != nil {
+					return eventData, err
+				}
+				eventData.Data = messageStopData
 			case "error":
 				var errorData ErrorData
-				json.Unmarshal([]byte(jsonData), &errorData)
-				data = errorData
+				err := json.Unmarshal([]byte(jsonData), &errorData)
+				if err != nil {
+					return eventData, err
+				}
+				return eventData, fmt.Errorf("error(%s) -  %s", errorData.Error.Type, errorData.Error.Message)
 			}
 		}
 	}
 
-	return data
+	return eventData, nil
+}
+
+func (d *MessageSSEDecoder) updateContent(index int, content string) {
+	if index >= len(d.content) {
+		d.content = append(d.content, make([]string, index-len(d.content)+1)...)
+	}
+	d.content[index] += content
 }
