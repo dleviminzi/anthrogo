@@ -57,7 +57,7 @@ type Message struct {
 type MessageContent struct {
 	Type  ContentType  `json:"type,omitempty"`
 	Text  *string      `json:"text,omitempty"`
-	Image *ImageSource `json:"image,omitempty"`
+	Image *ImageSource `json:"source,omitempty"`
 }
 
 // ImageSource describes an image that is sent to the model in base64 (type).
