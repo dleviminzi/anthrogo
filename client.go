@@ -38,38 +38,37 @@ type HttpClient interface {
 
 // Client is a structure holding all necessary fields for making requests to the API.
 type Client struct {
-	BaseURL                  string
-	Version                  string
-	StrictResponseValidation bool
-	MaxRetries               int
-	Timeout                  time.Duration
-	CustomHeaders            map[string]string
-	HttpClient               HttpClient
-	ApiKey                   string
+	baseURL       string
+	version       string
+	maxRetries    int
+	timeout       time.Duration
+	customHeaders map[string]string
+	httpClient    HttpClient
+	apiKey        string
 }
 
 // NewClient creates and returns a new Client. It applies the provided options to the client.
 // If no API key is provided as an option, it looks for the API key in the environment variable ANTHROPIC_API_KEY.
 func NewClient(options ...func(*Client)) (*Client, error) {
 	client := &Client{
-		Version:    DefaultVersion,
-		MaxRetries: DefaultMaxRetries,
-		Timeout:    DefaultTimeout,
-		HttpClient: &http.Client{},
-		ApiKey:     "",
-		BaseURL:    "https://api.anthropic.com/v1/",
+		version:    DefaultVersion,
+		maxRetries: DefaultMaxRetries,
+		timeout:    DefaultTimeout,
+		httpClient: &http.Client{},
+		apiKey:     "",
+		baseURL:    "https://api.anthropic.com/v1/",
 	}
 
 	for _, option := range options {
 		option(client)
 	}
 
-	if client.ApiKey == "" {
+	if client.apiKey == "" {
 		apiKey, exists := os.LookupEnv("ANTHROPIC_API_KEY")
 		if !exists {
 			return nil, errors.New("ANTHROPIC_API_KEY not found in environment and not provided as option")
 		}
-		client.ApiKey = apiKey
+		client.apiKey = apiKey
 	}
 
 	return client, nil
@@ -80,35 +79,35 @@ func NewClient(options ...func(*Client)) (*Client, error) {
 // WithApiKey is an option to provide an API key for the Client.
 func WithApiKey(apiKey string) func(*Client) {
 	return func(c *Client) {
-		c.ApiKey = apiKey
+		c.apiKey = apiKey
 	}
 }
 
 // WithMaxRetries is an option to set the maximum number of retries for the Client.
 func WithMaxRetries(maxRetries int) func(*Client) {
 	return func(c *Client) {
-		c.MaxRetries = maxRetries
+		c.maxRetries = maxRetries
 	}
 }
 
 // WithTimeout is an option to set the timeout for the Client.
 func WithTimeout(timeout time.Duration) func(*Client) {
 	return func(c *Client) {
-		c.Timeout = timeout
+		c.timeout = timeout
 	}
 }
 
 // WithCustomHeaders is an option to set custom headers for the Client.
 func WithCustomHeaders(headers map[string]string) func(*Client) {
 	return func(c *Client) {
-		c.CustomHeaders = headers
+		c.customHeaders = headers
 	}
 }
 
 // WithVersion is an option to set the API version for the Client.
 func WithVersion(version string) func(*Client) {
 	return func(c *Client) {
-		c.Version = version
+		c.version = version
 	}
 }
 
@@ -116,10 +115,10 @@ func WithVersion(version string) func(*Client) {
 func (c *Client) setRequestHeaders(req *http.Request) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Anthropic-Version", c.Version)
-	req.Header.Set("x-api-key", c.ApiKey)
+	req.Header.Set("Anthropic-Version", c.version)
+	req.Header.Set("x-api-key", c.apiKey)
 
-	for key, value := range c.CustomHeaders {
+	for key, value := range c.customHeaders {
 		req.Header.Set(key, value)
 	}
 }
@@ -131,14 +130,14 @@ func (c *Client) createRequest(ctx context.Context, payload any, requestType str
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.BaseURL+requestType, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", c.baseURL+requestType, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	c.setRequestHeaders(req)
 
-	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	req = req.WithContext(ctx)
 
 	return req, cancel, nil
@@ -146,7 +145,7 @@ func (c *Client) createRequest(ctx context.Context, payload any, requestType str
 
 // doRequest sends an HTTP request and returns the response.
 func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
-	res, err := c.HttpClient.Do(req)
+	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -156,10 +155,10 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 
 // doRequestWithRetries sends the HTTP request and retries upon failure up to the maximum retry limit.
 func (c *Client) doRequestWithRetries(req *http.Request) (*http.Response, error) {
-	for i := 0; i < c.MaxRetries; i++ {
+	for i := 0; i < c.maxRetries; i++ {
 		response, err := c.doRequest(req)
 		if err != nil {
-			if i == c.MaxRetries-1 {
+			if i == c.maxRetries-1 {
 				return nil, err
 			}
 
@@ -170,7 +169,7 @@ func (c *Client) doRequestWithRetries(req *http.Request) (*http.Response, error)
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("failed to complete request after %d retries", c.MaxRetries)
+	return nil, fmt.Errorf("failed to complete request after %d retries", c.maxRetries)
 }
 
 // getSleepDuration calculates and returns the sleep duration based on the retry attempt with added jitter.
