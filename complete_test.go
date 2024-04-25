@@ -36,7 +36,7 @@ func TestComplete(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{
 		MaxTokensToSample: 10,
@@ -64,7 +64,7 @@ func TestComplete_HttpClientError(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{}
 
@@ -87,7 +87,7 @@ func TestComplete_Non200StatusCode(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{}
 
@@ -109,7 +109,7 @@ func TestComplete_UnmarshalError(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{}
 
@@ -135,7 +135,7 @@ func TestCompleteStream(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{}
 
@@ -159,7 +159,7 @@ func TestCompleteStream_HttpClientError(t *testing.T) {
 	client, err := NewClient(WithApiKey("blah"))
 	require.NoError(t, err)
 
-	client.HttpClient = mockHTTPClient
+	client.httpClient = mockHTTPClient
 
 	payload := CompletionPayload{}
 

@@ -126,7 +126,7 @@ func (c *Client) MessageRequest(ctx context.Context, payload MessagePayload) (Me
 		var errorResponse ErrorResponse
 		err = json.Unmarshal(body, &errorResponse)
 		if err != nil {
-			return resp, err
+			return resp, fmt.Errorf("request failed and error response had unexpected form: %w", err)
 		}
 		return resp, fmt.Errorf("%s: %s", errorResponse.Error.Type, errorResponse.Error.Message)
 	}
