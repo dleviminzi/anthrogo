@@ -28,7 +28,7 @@ func main() {
 	userPrompt = strings.TrimSuffix(userPrompt, "\n")
 
 	r, _, err := c.MessageStreamRequest(context.Background(), anthrogo.MessagePayload{
-		Model: anthrogo.ModelClaude3Opus,
+		Model: anthrogo.ModelClaude3Dot5Sonnet,
 		Messages: []anthrogo.Message{{
 			Role: anthrogo.RoleTypeUser,
 			Content: []anthrogo.MessageContent{{
